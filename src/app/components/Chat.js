@@ -13,7 +13,7 @@ const Chat = () => {
     socket = io();
 
     socket.on('chat message', (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      setMess ages((prev) => [...prev, msg]);
     });
 
     return () => {

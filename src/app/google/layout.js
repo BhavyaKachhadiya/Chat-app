@@ -3,7 +3,7 @@ import Provider from "@/app/components/Provider";
 import Wrapper from "@/app/components/Wrapper";
 
 export const metadata = {
-  title: "Chat",
+  title: "chat",
   description: "Chat app",
 };
 

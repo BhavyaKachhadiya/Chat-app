@@ -27,6 +27,11 @@ const Message = mongoose.model('Message', {
   content: String,
   timestamp: Date,
 });
+const User = mongoose.model('User', {
+  email: String,
+  username: String,
+  password: String,
+});
 
 app.prepare().then(() => {
   const server = express();
@@ -41,16 +46,17 @@ app.prepare().then(() => {
   });
 
   io.on('connection', (socket) => {
-    console.log('User connected');
-
-    // Join room based on username
-    const { username } = socket.handshake.query;
-    socket.join(username);
-
+  
+ 
+    socket.on('join', (username) => {
+      socket.join(username);
+      console.log(`User ${socket.id} joined room: ${username}`);
+    });
+  
     socket.on('chat message', (msg) => {
       const newMessage = new Message({
         sender: msg.sender,
-        receiver: username,
+        receiver: msg.receiver || "Guest",
         content: msg.content,
         timestamp: new Date(),
       });

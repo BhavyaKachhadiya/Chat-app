@@ -1,19 +1,24 @@
 "use client"
 import { useEffect, useState } from 'react';
-
+import { useSession } from 'next-auth/react';
 import io from 'socket.io-client';
 
 let socket;
 
-const Chat = ({username}) => {
-
-  
+const Chat = ({params}) => {
+  params.username = decodeURIComponent(params.username)
+  const {data:session}= useSession();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
   useEffect(() => {
-    if (username) {
-      socket = io({ query: { username } }); // Connect to Socket.io with username
+    
+      if (params.username && session) {
+        socket = io();
+         // Join room based on username
+      socket.emit('join', params.username);
+
+      
 
       // Listen for incoming messages for this specific room (username)
       socket.on('chat message', (msg) => {
@@ -21,7 +26,7 @@ const Chat = ({username}) => {
       });
 
       socket.on('connect', () => {
-        console.log('Connected to chat with', username);
+        console.log('Connected to chat with', params.username);
       });
 
       return () => {
@@ -30,28 +35,31 @@ const Chat = ({username}) => {
         }
       };
     }
-  }, [username]);
+  }, [params.username, session]);
 
   const sendMessage = () => {
     if (input.trim()) {
       const message = {
         content: input,
-        sender: 'User', // Replace with actual user data or logged-in user
+        sender: session?.user?.name || "Guest", // Replace with actual user data or logged-in user
+        receiver: params.username,
         timestamp: new Date().toISOString(),
       };
 
       // Emit the message to the server
-      socket.emit('chat message', message);
-
-      // Update local state
-      setMessages((prevMessages) => [...prevMessages, message]);
-      setInput('');
+      if (socket) {
+        socket.emit('chat message', message);
+        setMessages((prevMessages) => [...prevMessages, message]);
+        setInput('');
+      } else {
+        console.error('Socket is not connected');
+      }
     }
   };
 
   return (
     <div>
-      <h1>Chat with {username}</h1>
+      <h1>Chat with {params.username}</h1>
       <div>
         {messages.map((msg, index) => (
           <div key={index}>
@@ -64,6 +72,7 @@ const Chat = ({username}) => {
         <input
           type="text"
           value={input}
+          className='text-black'
           onChange={(e) => setInput(e.target.value)}
         />
         <button onClick={sendMessage}>Send</button>
